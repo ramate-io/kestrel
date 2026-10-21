@@ -10,6 +10,34 @@ pub trait CustomProcessor<T> {
 	) -> impl Future<Output = Result<Option<T>, FulfillError>> + Send;
 }
 
+/// Fulfills when a piped line contains `needle`. Blocks on recv so `Fulfill::run` does not spin.
+pub struct ContainsLine {
+	pub needle: String,
+}
+
+impl ContainsLine {
+	pub fn new(needle: impl Into<String>) -> Self {
+		Self { needle: needle.into() }
+	}
+}
+
+impl CustomProcessor<String> for ContainsLine {
+	fn process_receiver(
+		&self,
+		receiver: &mut Receiver<String>,
+	) -> impl Future<Output = Result<Option<String>, FulfillError>> + Send {
+		let needle = self.needle.clone();
+		async move {
+			while let Some(line) = receiver.recv().await {
+				if line.contains(&needle) {
+					return Ok(Some(line));
+				}
+			}
+			Ok(None)
+		}
+	}
+}
+
 /// Custom struct that fulfills requests using a receiver and an async closure.
 pub struct Custom<T, P>
 where
