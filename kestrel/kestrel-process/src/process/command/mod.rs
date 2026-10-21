@@ -63,6 +63,27 @@ impl Command {
 	pub fn get_current_dir(&self) -> Option<&Path> {
 		self.inner.get_current_dir()
 	}
+
+	/// Sets an environment variable for the child process.
+	pub fn env<K, V>(&mut self, key: K, val: V) -> &mut Self
+	where
+		K: AsRef<OsStr>,
+		V: AsRef<OsStr>,
+	{
+		self.inner.env(key, val);
+		self
+	}
+
+	/// Sets environment variables for the child process.
+	pub fn envs<I, K, V>(&mut self, vars: I) -> &mut Self
+	where
+		I: IntoIterator<Item = (K, V)>,
+		K: AsRef<OsStr>,
+		V: AsRef<OsStr>,
+	{
+		self.inner.envs(vars);
+		self
+	}
 }
 
 impl ProcessOperations for Command {

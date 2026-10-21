@@ -145,6 +145,25 @@ impl Command {
 		self
 	}
 
+	pub fn env<K, V>(&mut self, key: K, val: V) -> &mut Self
+	where
+		K: AsRef<OsStr>,
+		V: AsRef<OsStr>,
+	{
+		self.inner.env(key, val);
+		self
+	}
+
+	pub fn envs<I, K, V>(&mut self, vars: I) -> &mut Self
+	where
+		I: IntoIterator<Item = (K, V)>,
+		K: AsRef<OsStr>,
+		V: AsRef<OsStr>,
+	{
+		self.inner.envs(vars);
+		self
+	}
+
 	pub fn get_current_dir(&self) -> Option<&Path> {
 		self.inner.as_std().get_current_dir()
 	}
@@ -242,6 +261,16 @@ mod tests {
 	use super::*;
 	use anyhow::Result;
 	use tokio::sync::mpsc;
+
+	#[tokio::test]
+	async fn test_run_command_with_env() -> Result<()> {
+		let output = Command::line("sh", ["-c", "printf '%s' \"$KESTREL_ENV_TEST\""], None, true, vec![], vec![])
+			.env("KESTREL_ENV_TEST", "from-env")
+			.run()
+			.await?;
+		assert_eq!(output.trim(), "from-env");
+		Ok(())
+	}
 
 	/// Test running a simple command and capturing its output.
 	#[tokio::test]
